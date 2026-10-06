@@ -42,9 +42,14 @@ test('contratos HTTP de documentos', async (context) => {
   };
 
   await context.test('exige usuário antes de gravar arquivos', async () => {
-    for (const endpoint of ['/documents', '/documents/ausente/download', '/upload']) {
+    for (const endpoint of [
+      '/documents',
+      '/documents/ausente/download',
+      '/documents/ausente',
+      '/upload',
+    ]) {
       const response = await fetch(`${baseUrl}${endpoint}`, {
-        method: endpoint === '/upload' ? 'POST' : 'GET',
+        method: endpoint === '/upload' ? 'POST' : endpoint === '/documents/ausente' ? 'DELETE' : 'GET',
       });
       assert.strictEqual(response.status, 400);
       assert.strictEqual((await response.json()).error.code, 'USER_ID_REQUIRED');
@@ -83,6 +88,30 @@ test('contratos HTTP de documentos', async (context) => {
     const missingFile = await fetch(url, { headers });
     assert.strictEqual(missingFile.status, 404);
     assert.deepStrictEqual(await missingFile.json(), await denied.json());
+
+    const secondUpload = await send('file', 'documento para excluir');
+    assert.strictEqual(secondUpload.status, 201);
+    const secondDocument = await secondUpload.json();
+    const storedFiles = await fs.readdir(storageDirectory);
+    assert.strictEqual(storedFiles.length, 1);
+    const storedFile = path.join(storageDirectory, storedFiles[0]);
+    const deleteUrl = `${baseUrl}/documents/${secondDocument.id}`;
+
+    const unauthorizedDelete = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: otherHeaders,
+    });
+    assert.strictEqual(unauthorizedDelete.status, 404);
+
+    const deleted = await fetch(deleteUrl, { method: 'DELETE', headers });
+    assert.strictEqual(deleted.status, 204);
+    await assert.rejects(fs.access(storedFile), { code: 'ENOENT' });
+
+    const listAfterDelete = await fetch(`${baseUrl}/documents`, { headers });
+    assert.deepStrictEqual((await listAfterDelete.json()).documents, [document]);
+
+    const repeatedDelete = await fetch(deleteUrl, { method: 'DELETE', headers });
+    assert.strictEqual(repeatedDelete.status, 404);
   });
 
   await context.test('rejeita arquivo ausente, campo incorreto e tamanho excedido', async () => {

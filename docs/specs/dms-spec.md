@@ -11,6 +11,7 @@ Disponibilizar uma aplicação web para que usuários enviem documentos, consult
 - Upload de um documento por requisição.
 - Listagem dos documentos associados ao usuário atual.
 - Download de documento pelo identificador.
+- Exclusão do arquivo e dos metadados do documento pelo identificador.
 - Identificação simples do dono do documento.
 - Interface web para upload, listagem e download.
 - Validação dos limites e tratamento de erros de arquivo e filesystem.
@@ -20,7 +21,7 @@ Disponibilizar uma aplicação web para que usuários enviem documentos, consult
 - Armazenamento em nuvem ou integração com provedores externos.
 - Banco de dados; os metadados permanecem em memória.
 - Autenticação, autorização baseada em contas ou gestão de credenciais.
-- Versionamento, edição, exclusão ou compartilhamento de documentos.
+- Versionamento, edição ou compartilhamento de documentos.
 - Busca avançada, pastas, categorias e pré-visualização.
 - Persistência dos metadados após reinício do backend.
 
@@ -44,6 +45,7 @@ Esse identificador simples não autentica o usuário e não é uma fronteira de 
 | RF-08 | O sistema informa erros de entrada, arquivo ausente, tamanho excedido e documento indisponível. |
 | RF-09 | A interface permite informar um identificador simples de usuário. |
 | RF-10 | A interface permite enviar, listar e baixar documentos e exibe estados de carregamento e erro. |
+| RF-11 | O dono pode excluir um documento; o sistema remove o arquivo local e seus metadados em memória. |
 
 ## 5. Requisitos não funcionais
 
@@ -120,6 +122,14 @@ Exemplo de resposta:
 - `404 Not Found`: documento inexistente, de outro usuário ou arquivo local indisponível. As situações usam a mesma resposta para não revelar a existência de documentos alheios.
 - `500 Internal Server Error`: falha inesperada de leitura.
 
+### `DELETE /documents/:id`
+
+- Entrada: identificador na URL e cabeçalho `X-User-Id`.
+- Sucesso: `204 No Content`; remove o arquivo local e os metadados em memória.
+- `400 Bad Request`: cabeçalho ausente ou vazio.
+- `404 Not Found`: documento inexistente ou pertencente a outro usuário.
+- `500 Internal Server Error`: falha ao remover o arquivo. Nesse caso, os metadados devem permanecer disponíveis.
+
 ## 8. Configuração
 
 | Variável | Padrão | Descrição |
@@ -136,6 +146,7 @@ O diretório é criado quando necessário. Caminhos de armazenamento não podem 
 - `controllers/`: valida entrada HTTP e monta status e respostas.
 - `services/`: coordena casos de uso e regras de negócio.
 - `repositories/`: encapsula metadados em memória e acesso aos arquivos locais.
+- A exclusão verifica o dono, remove o arquivo local e só então apaga os metadados em memória.
 - Camadas internas não dependem de Express.
 - O frontend usa componentes React e serviço `fetch` no prefixo `/api`, enviando `X-User-Id`.
 - Reiniciar o backend perde os metadados; arquivos podem permanecer sem referência. Persistência e reconciliação estão fora do escopo.

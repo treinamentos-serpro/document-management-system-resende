@@ -40,4 +40,8 @@ async function download(id, owner) {
   return { storagePath: document.storagePath, originalName: document.originalName };
 }
 
-module.exports = { upload, list, download };
+function remove(id, owner) {
+  return repository.deleteByIdAndOwner(id, owner);
+}
+
+module.exports = { upload, list, download, remove };

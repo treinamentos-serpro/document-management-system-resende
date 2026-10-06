@@ -30,6 +30,7 @@ function createDocumentRouter() {
   const router = express.Router();
   router.post('/upload', controller.requireUser, upload.single('file'), controller.upload);
   router.get('/documents', controller.requireUser, controller.list);
+  router.delete('/documents/:id', controller.requireUser, controller.remove);
   router.get('/documents/:id/download', controller.requireUser, controller.download);
   return router;
 }

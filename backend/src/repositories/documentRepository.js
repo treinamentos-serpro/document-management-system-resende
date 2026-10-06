@@ -31,4 +31,20 @@ async function removeFile(storagePath) {
   await fs.rm(storagePath, { force: true });
 }
 
-module.exports = { save, listByOwner, findById, fileExists, removeFile };
+async function deleteByIdAndOwner(id, owner) {
+  const document = documents.get(id);
+  if (!document || document.owner !== owner) return false;
+
+  await removeFile(document.storagePath);
+  documents.delete(id);
+  return true;
+}
+
+module.exports = {
+  save,
+  listByOwner,
+  findById,
+  fileExists,
+  removeFile,
+  deleteByIdAndOwner,
+};

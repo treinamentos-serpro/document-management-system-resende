@@ -41,4 +41,10 @@ async function download(req, res, next) {
   });
 }
 
-module.exports = { requireUser, upload, list, download };
+async function remove(req, res) {
+  const deleted = await service.remove(req.params.id, req.documentOwner);
+  if (!deleted) return notFound(res);
+  return res.status(204).end();
+}
+
+module.exports = { requireUser, upload, list, download, remove };
